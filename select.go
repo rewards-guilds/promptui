@@ -2,6 +2,7 @@ package promptui
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -413,7 +414,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		if s.ExitValue != "" {
 			return s.list.Index(), fmt.Sprintf("%v", s.ExitValue), err
 		}
-		// os.Exit(ExitCode)
+		return 0, "", errors.New("Quit")
 	}
 
 	items, idx := s.list.Items()
