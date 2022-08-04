@@ -413,7 +413,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		if s.ExitValue != "" {
 			return s.list.Index(), fmt.Sprintf("%v", s.ExitValue), err
 		}
-		os.Exit(ExitCode)
+		// os.Exit(ExitCode)
 	}
 
 	items, idx := s.list.Items()
