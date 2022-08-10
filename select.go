@@ -2,7 +2,6 @@ package promptui
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,6 +20,8 @@ const SelectedAdd = -1
 
 // ExitCode is default exit code. It will be returned on application exit.
 const ExitCode = 0
+
+type QuitError struct{}
 
 // Select represents a list of items used to enable selections, they can be used as search engines, menus
 // or as a list of items in a cli based prompt.
@@ -85,6 +86,9 @@ type Select struct {
 	// A value that can de returned as result of Run() on ExitKey pressing.
 	// If not defined, application will be closed on ExitKey pressing.
 	ExitValue string
+
+	NumberNavigate bool
+	EnableQuit     bool
 
 	Stdin  io.ReadCloser
 	Stdout io.WriteCloser
@@ -194,6 +198,10 @@ type SelectTemplates struct {
 // SearchPrompt is the prompt displayed in search mode.
 var SearchPrompt = "Search: "
 
+func (e *QuitError) Error() string {
+	return "Quit"
+}
+
 // Run executes the select list. It displays the label and the list of items, asking the user to chose any
 // value within to list. Run will keep the prompt alive until it has been canceled from
 // the command prompt or it has received a valid value. It will return the value and an error if any
@@ -286,7 +294,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
-		case key == s.Keys.Exit.Code && !searchMode:
+		case s.EnableQuit && key == s.Keys.Exit.Code:
 			isExit = true
 		case key == KeyBackspace || key == KeyCtrlH:
 			if !canSearch || !searchMode {
@@ -303,6 +311,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			s.list.PageUp()
 		case key == s.Keys.PageDown.Code || (key == 'l' && !searchMode):
 			s.list.PageDown()
+		case s.NumberNavigate && key <= 57 && key >= 49:
+			s.list.SetCursor(int(key-'0') - 1)
 		default:
 			if canSearch && searchMode {
 				cur.Update(string(line))
@@ -414,7 +424,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		if s.ExitValue != "" {
 			return s.list.Index(), fmt.Sprintf("%v", s.ExitValue), err
 		}
-		return 0, "", errors.New("Quit")
+		return 0, "", &QuitError{}
 	}
 
 	items, idx := s.list.Items()
