@@ -113,11 +113,13 @@ func (l *List) SetStart(i int) {
 // will be clamped.
 func (l *List) SetCursor(i int) {
 	max := len(l.scope) - 1
-	if i >= max {
-		i = max
+	if i > max {
+		// i = max
+		return
 	}
 	if i < 0 {
-		i = 0
+		// i = 0
+		return
 	}
 	l.cursor = i
 
